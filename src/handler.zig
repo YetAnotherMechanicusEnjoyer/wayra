@@ -18,6 +18,7 @@ pub fn handle_connection(io: std.Io, allocator: std.mem.Allocator, conn: std.Io.
 
     while (true) {
         var req = server.receiveHead() catch |e| {
+            if (e == std.http.Reader.HeadError.HttpConnectionClosing) break;
             std.log.err("Error receiving HTTP request: {}", .{e});
             break;
         };

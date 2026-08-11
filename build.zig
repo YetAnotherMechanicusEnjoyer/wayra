@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) void {
     tests_mod.addImport("wayra", module);
 
     const tests = b.addTest(.{
-        .name = "string_test",
+        .name = "wayra_test",
         .root_module = tests_mod,
     });
 

@@ -36,7 +36,7 @@ pub fn render_dir(io: std.Io, allocator: std.mem.Allocator, dir_path: []const u8
 
     if (!std.mem.eql(u8, req_path, "/")) {
         try list.appendSlice(allocator,
-            \\<li><a href="../"><span class="icon">🔙</span><span class="name">.. (Dossier parent)</span></a></li>
+            \\<li><a href="../"><span class="icon">🔙</span><span class="name">..</span></a></li>
         );
     }
 

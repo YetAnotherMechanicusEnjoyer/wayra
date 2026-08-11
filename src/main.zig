@@ -2,12 +2,16 @@ const std = @import("std");
 
 const String = @import("string").String;
 
+const Server = @import("server.zig").Server;
+
 const APP_NAME: []const u8 = "wayra";
+const DEFAULT_ADDRESS: []const u8 = "::";
 const DEFAULT_PORT: u16 = 8000;
 const DEFAULT_DIR: []const u8 = ".";
 
 const Error = error{
     BadUsage,
+    InvalidHost,
     InvalidPort,
     InvalidDir,
 };
@@ -25,28 +29,33 @@ pub fn main(init: std.process.Init) !u8 {
     parse_arguments(io, allocator, &args, &err_ctx) catch |err| {
         if (err == Error.BadUsage) print_usage(io);
         if (err_ctx.len() > 0) {
-            std.log.err("Exited with error: {any}: {s}.", .{ err, err_ctx.content });
-        } else std.log.err("Exited with error: {any}", .{err});
+            std.log.err("Exited with error: {}: {s}.", .{ err, err_ctx.content });
+        } else std.log.err("Exited with error: {}", .{err});
         return 1;
     };
     return 0;
 }
 
 fn parse_arguments(io: std.Io, allocator: std.mem.Allocator, args: *std.process.Args.Iterator, err_ctx: *String) !void {
-    _ = allocator;
-
+    var host = DEFAULT_ADDRESS;
     var port = DEFAULT_PORT;
     var dir = DEFAULT_DIR;
 
     while (args.next()) |arg| {
-        if (std.mem.eql(u8, arg, "-p") or std.mem.eql(u8, arg, "--port")) {
+        if (std.mem.eql(u8, arg, "-b") or std.mem.eql(u8, arg, "--bind")) {
+            if (args.next()) |h| {
+                host = h;
+            } else {
+                try err_ctx.push("expected two arguments");
+                return Error.InvalidHost;
+            }
             if (args.next()) |p| {
                 port = std.fmt.parseInt(u16, p, 10) catch {
                     try err_ctx.push(p);
                     return Error.InvalidPort;
                 };
             } else {
-                try err_ctx.push("expected one argument");
+                try err_ctx.push("expected two arguments");
                 return Error.InvalidPort;
             }
         } else if (std.mem.eql(u8, arg, "-d") or std.mem.eql(u8, arg, "--dir")) {
@@ -61,6 +70,15 @@ fn parse_arguments(io: std.Io, allocator: std.mem.Allocator, args: *std.process.
             return;
         } else return Error.BadUsage;
     }
+
+    var server = Server{
+        .allocator = allocator,
+        .host = host,
+        .port = port,
+        .root_dir = dir,
+    };
+
+    try server.run(io, err_ctx);
 }
 
 fn print_usage(io: std.Io) void {
@@ -78,7 +96,7 @@ fn print_usage(io: std.Io) void {
         .{ "{s}:: {s}Usage{s}:{s}\n", .{ dim, blue, dim, reset } },
         .{ "   {s}{s}{s} [OPTIONS]\n\n", .{ green, APP_NAME, reset } },
         .{ "{s}:: {s}Options{s}:{s}\n", .{ dim, blue, dim, reset } },
-        .{ "   {s}-p, --port <port>{s}           Server port                {s}(default: {d}){s}\n", .{ bold, reset, dim, DEFAULT_PORT, reset } },
+        .{ "   {s}-b, --bind <host> <port>{s}    Server address             {s}(default: {s} {d}){s}\n", .{ bold, reset, dim, DEFAULT_ADDRESS, DEFAULT_PORT, reset } },
         .{ "   {s}-d, --dir <root directory>{s}  Server root directory      {s}(default: \"{s}\"){s}\n", .{ bold, reset, dim, DEFAULT_DIR, reset } },
         .{ "   {s}-h, --help{s}                  Display this help message \n", .{ bold, reset } },
     };

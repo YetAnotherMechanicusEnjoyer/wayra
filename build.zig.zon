@@ -1,9 +1,12 @@
 .{
-    .name = .your_project_name,
-    .fingerprint = 0x000,
+    .name = .wayra,
+    .fingerprint = 0x72d642c11d6628a8,
     .version = "0.1.0",
     .dependencies = .{
-        // TODO: zig fetch --save git+https://github.com/YetAnotherMechanicusEnjoyer/libstring
+        .string = .{
+            .url = "git+https://github.com/YetAnotherMechanicusEnjoyer/libstring#7e5ed3a0671771dcbf13ce19b7b064ee653512e7",
+            .hash = "string-0.0.1-PoOZytq6AACshKT4VtEJucJcmBOrNSJxX33-jALhlCC_",
+        },
     },
     .paths = .{
         "README.md",

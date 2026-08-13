@@ -41,6 +41,8 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         return;
     }
 
+    const force_listing = std.mem.indexOf(u8, target, "?list") != null;
+
     var clean_path = target;
     if (std.mem.indexOf(u8, clean_path, "?")) |idx| clean_path = clean_path[0..idx];
     if (clean_path.len > 0 and clean_path[0] == '/') clean_path = clean_path[1..];
@@ -61,15 +63,20 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
     };
 
     if (stat.kind == .directory) {
-        const index_path = try std.fs.path.join(allocator, &.{ real_path, "index.html" });
-        defer allocator.free(index_path);
-
-        if (std.Io.Dir.cwd().statFile(io, index_path, .{})) |index_stat| {
-            log_request(io, addr, req, .ok, null);
-            try serve_file(io, req, writer, index_path, index_stat.size);
-        } else |_| {
+        if (force_listing) {
             log_request(io, addr, req, .ok, null);
             try serve_dir_listing(io, allocator, req, real_path, target);
+        } else {
+            const index_path = try std.fs.path.join(allocator, &.{ real_path, "index.html" });
+            defer allocator.free(index_path);
+
+            if (std.Io.Dir.cwd().statFile(io, index_path, .{})) |index_stat| {
+                log_request(io, addr, req, .ok, null);
+                try serve_file(io, req, writer, index_path, index_stat.size);
+            } else |_| {
+                log_request(io, addr, req, .ok, null);
+                try serve_dir_listing(io, allocator, req, real_path, target);
+            }
         }
     } else {
         log_request(io, addr, req, .ok, null);

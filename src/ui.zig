@@ -297,6 +297,8 @@ pub fn render_dir(io: std.Io, allocator: std.mem.Allocator, dir_path: []const u8
         \\                    body.innerHTML = `<audio controls src="${href}"></audio>`;
         \\                } else if (videoExts.includes(ext)) {
         \\                    body.innerHTML = `<video controls src="${href}"></video>`;
+        \\                } else if (ext === '.pdf') {
+        \\                    body.innerHTML = `<embed src="${href}" width="100%" height="100%" />`;
         \\                } else {
         \\                    try {
         \\                        const res = await fetch(href);

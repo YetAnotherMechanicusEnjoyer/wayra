@@ -13,6 +13,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    if (optimize != .Debug) {
+        module.strip = true;
+        module.error_tracing = false;
+        module.omit_frame_pointer = true;
+    }
+
     const libstring = b.dependency("string", .{ .target = target, .optimize = optimize });
     module.addImport("string", libstring.module("string"));
 

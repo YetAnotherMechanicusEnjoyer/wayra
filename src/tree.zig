@@ -11,9 +11,13 @@ pub const Tree = struct {
         kind: std.Io.File.Kind,
     };
 
+    fn is_dir(e: Entry) bool {
+        return e.kind == .directory or e.kind == .sym_link;
+    }
+
     fn less_than(_: void, a: Entry, b: Entry) bool {
-        if (a.kind == .directory and b.kind != .directory) return true;
-        if (a.kind != .directory and b.kind == .directory) return false;
+        if (is_dir(a) and !is_dir(b)) return true;
+        if (!is_dir(a) and is_dir(b)) return false;
         return std.mem.order(u8, a.name, b.name) == .lt;
     }
 
@@ -42,14 +46,14 @@ pub const Tree = struct {
         for (entries.items, 0..) |entry, i| {
             const is_last = (i == entries.items.len - 1);
             const branch = if (is_last) "└── " else "├── ";
-            const slash = if (entry.kind == .directory) "/" else "";
+            const slash = if (is_dir(entry)) "/" else "";
 
             const s = try std.fmt.allocPrint(allocator, "{s}{s}{s}{s}\n", .{ prefix, branch, entry.name, slash });
             defer allocator.free(s);
 
             try list.appendSlice(allocator, s);
 
-            if (entry.kind == .directory) {
+            if (is_dir(entry)) {
                 const next_prefix_add = if (is_last) "    " else "│   ";
                 const next_prefix = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, next_prefix_add });
                 defer allocator.free(next_prefix);

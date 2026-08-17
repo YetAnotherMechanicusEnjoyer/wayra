@@ -3,6 +3,7 @@ const std = @import("std");
 const Server = std.http.Server;
 
 const mime = @import("mime.zig");
+const tree = @import("tree.zig");
 const ui = @import("ui.zig");
 
 pub fn handle_connection(io: std.Io, allocator: std.mem.Allocator, conn: std.Io.net.Stream, root_dir: []const u8) void {
@@ -32,6 +33,16 @@ pub fn handle_connection(io: std.Io, allocator: std.mem.Allocator, conn: std.Io.
     }
 }
 
+fn is_curl(req: *Server.Request) bool {
+    var it = req.iterateHeaders();
+    while (it.next()) |header| {
+        if (std.ascii.eqlIgnoreCase(header.name, "user-agent")) {
+            return std.mem.startsWith(u8, header.value, "curl/");
+        }
+    }
+    return false;
+}
+
 fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpAddress, req: *Server.Request, writer: *std.Io.Writer, root_dir: []const u8) !void {
     const target = req.head.target;
 
@@ -42,6 +53,7 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
     }
 
     const force_listing = std.mem.indexOf(u8, target, "?list") != null;
+    const curl_client = is_curl(req);
 
     var clean_path = target;
     if (std.mem.indexOf(u8, clean_path, "?")) |idx| clean_path = clean_path[0..idx];
@@ -63,6 +75,11 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
     };
 
     if (stat.kind == .directory) {
+        if (curl_client) {
+            log_request(io, addr, req, .ok, null);
+            try serve_tree_listing(io, allocator, req, real_path);
+            return;
+        }
         if (force_listing) {
             log_request(io, addr, req, .ok, null);
             try serve_dir_listing(io, allocator, req, real_path, target);
@@ -82,6 +99,24 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         log_request(io, addr, req, .ok, null);
         try serve_file(io, req, writer, real_path, stat.size);
     }
+}
+
+fn serve_tree_listing(io: std.Io, allocator: std.mem.Allocator, req: *Server.Request, real_path: []const u8) !void {
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_alloc = arena.allocator();
+
+    var list: std.ArrayListUnmanaged(u8) = .empty;
+    defer list.deinit(arena_alloc);
+
+    try tree.Tree.build(io, arena_alloc, real_path, &list);
+
+    try req.respond(list.items, .{
+        .status = .ok,
+        .extra_headers = &.{
+            .{ .name = "Content-Type", .value = "text/plain; charset=utf-8" },
+        },
+    });
 }
 
 fn serve_file(io: std.Io, req: *Server.Request, writer: *std.Io.Writer, path: []const u8, size: u64) !void {

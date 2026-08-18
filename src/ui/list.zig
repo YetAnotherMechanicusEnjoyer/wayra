@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const icons = @import("icons.zig");
+const utils = @import("../utils.zig");
 
 pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const u8, list: *std.ArrayListUnmanaged(u8)) !void {
     var dir = try std.Io.Dir.cwd().openDir(io, dir_path, .{ .iterate = true });
@@ -10,8 +11,8 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
     while (try iter.next(io)) |entry| {
         const path = try std.fs.path.join(allocator, &.{ dir_path, entry.name });
         defer allocator.free(path);
-        const is_dir_bool = is_dir(io, path, entry);
-        const icon = icons.get_icon(entry.name, is_dir_bool);
+        const is_dir = utils.get_stat(io, path, entry).kind == .directory;
+        const icon = icons.get_icon(entry.name, is_dir);
 
         const file_path = std.fs.path.join(allocator, &.{ dir_path, entry.name }) catch continue;
         const stat = std.Io.Dir.cwd().statFile(io, file_path, .{}) catch continue;
@@ -22,7 +23,7 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
         const bytes_size = try std.fmt.bufPrint(&buffer, "{d:.2}", .{bytes.size});
         const size = std.mem.trimEnd(u8, std.mem.trimEnd(u8, bytes_size, "0"), ".");
 
-        if (is_dir_bool) {
+        if (is_dir) {
             const download = try std.fmt.allocPrint(allocator, "{s}?download", .{entry.name});
             defer allocator.free(download);
 
@@ -58,24 +59,6 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
             try list.appendSlice(allocator, item);
         }
     }
-}
-
-fn is_dir(io: std.Io, path: []const u8, e: std.Io.Dir.Entry) bool {
-    if (e.kind == .directory) return true;
-    if (e.kind == .sym_link) {
-        var resolved_buf: [std.fs.max_path_bytes]u8 = undefined;
-        if (std.Io.Dir.cwd().realPathFile(io, path, &resolved_buf)) |resolved_len| {
-            const resolved_path = resolved_buf[0..resolved_len];
-            if (std.Io.Dir.cwd().statFile(io, resolved_path, .{})) |resolved_stat| {
-                return resolved_stat.kind == .directory;
-            } else |_| {
-                return false;
-            }
-        } else |_| {
-            return false;
-        }
-    }
-    return false;
 }
 
 fn get_unit(size: u64) struct { size: f64, unit: []const u8 } {

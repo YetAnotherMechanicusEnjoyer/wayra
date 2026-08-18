@@ -14,6 +14,20 @@ pub fn get_stat(io: std.Io, path: []const u8, stat: std.Io.Dir.Stat) std.Io.Dir.
     return target_stat;
 }
 
+pub fn get_kind(io: std.Io, path: []const u8, kind: std.Io.File.Kind) std.Io.File.Kind {
+    var target_kind = kind;
+    if (kind == .sym_link) {
+        var resolved_buf: [std.fs.max_path_bytes]u8 = undefined;
+        if (std.Io.Dir.cwd().realPathFile(io, path, &resolved_buf)) |resolved_len| {
+            const resolved_path = resolved_buf[0..resolved_len];
+            if (std.Io.Dir.cwd().statFile(io, resolved_path, .{})) |resolved_stat| {
+                target_kind = resolved_stat.kind;
+            } else |_| {}
+        } else |_| {}
+    }
+    return target_kind;
+}
+
 pub fn is_curl(req: *std.http.Server.Request) bool {
     var it = req.iterateHeaders();
     while (it.next()) |header| {

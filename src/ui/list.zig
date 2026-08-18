@@ -11,7 +11,7 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
     while (try iter.next(io)) |entry| {
         const path = try std.fs.path.join(allocator, &.{ dir_path, entry.name });
         defer allocator.free(path);
-        const is_dir = utils.get_stat(io, path, entry).kind == .directory;
+        const is_dir = utils.get_kind(io, path, entry.kind) == .directory;
         const icon = icons.get_icon(entry.name, is_dir);
 
         const file_path = std.fs.path.join(allocator, &.{ dir_path, entry.name }) catch continue;

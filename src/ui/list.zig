@@ -8,7 +8,7 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
 
     var iter = dir.iterate();
     while (try iter.next(io)) |entry| {
-        const is_dir = entry.kind == .directory;
+        const is_dir = entry.kind == .directory or entry.kind == .sym_link;
         const icon = icons.get_icon(entry.name, is_dir);
         //const ext_label = if (is_dir) "" else get_extension_label(entry.name);
 

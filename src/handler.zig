@@ -74,7 +74,7 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         return;
     };
 
-    if (stat.kind == .directory) {
+    if (stat.kind == .directory or stat.kind == .sym_link) {
         if (curl_client) {
             log_request(io, addr, req, .ok, null);
             try serve_tree_listing(io, allocator, req, real_path);

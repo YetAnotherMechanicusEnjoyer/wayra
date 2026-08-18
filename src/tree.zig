@@ -11,7 +11,7 @@ pub const Tree = struct {
         kind: std.Io.File.Kind,
     };
 
-    fn is_dir(e: Entry) bool {
+    inline fn is_dir(e: Entry) bool {
         return e.kind == .directory or e.kind == .sym_link;
     }
 

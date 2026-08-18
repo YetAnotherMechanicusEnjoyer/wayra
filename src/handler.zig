@@ -53,6 +53,7 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
     }
 
     const force_listing = std.mem.indexOf(u8, target, "?list") != null;
+    const force_download = std.mem.indexOf(u8, target, "?download") != null;
     const curl_client = is_curl(req);
 
     var clean_path = target;
@@ -74,7 +75,18 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         return;
     };
 
-    if (stat.kind == .directory or stat.kind == .sym_link) {
+    var target_stat = stat;
+    if (stat.kind == .sym_link) {
+        var resolved_buf: [std.fs.max_path_bytes]u8 = undefined;
+        if (std.Io.Dir.cwd().realPathFile(io, real_path, &resolved_buf)) |resolved_len| {
+            const resolved_path = resolved_buf[0..resolved_len];
+            if (std.Io.Dir.cwd().statFile(io, resolved_path, .{})) |resolved_stat| {
+                target_stat = resolved_stat;
+            } else |_| {}
+        } else |_| {}
+    }
+
+    if (target_stat.kind == .directory) {
         if (curl_client) {
             log_request(io, addr, req, .ok, null);
             try serve_tree_listing(io, allocator, req, real_path);
@@ -83,6 +95,10 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         if (force_listing) {
             log_request(io, addr, req, .ok, null);
             try serve_dir_listing(io, allocator, req, real_path, target);
+        } else if (force_download) {
+            log_request(io, addr, req, .ok, null);
+            try serve_dir_download(io, allocator, req, writer, real_path);
+            return;
         } else {
             const index_path = try std.fs.path.join(allocator, &.{ real_path, "index.html" });
             defer allocator.free(index_path);
@@ -97,7 +113,7 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         }
     } else {
         log_request(io, addr, req, .ok, null);
-        try serve_file(io, req, writer, real_path, stat.size);
+        try serve_file(io, req, writer, real_path, target_stat.size);
     }
 }
 
@@ -117,6 +133,54 @@ fn serve_tree_listing(io: std.Io, allocator: std.mem.Allocator, req: *Server.Req
             .{ .name = "Content-Type", .value = "text/plain; charset=utf-8" },
         },
     });
+}
+
+fn serve_dir_download(io: std.Io, allocator: std.mem.Allocator, req: *Server.Request, writer: *std.Io.Writer, real_path: []const u8) !void {
+    var target_dir = std.fs.path.basename(real_path);
+    const parent_dir = std.fs.path.dirname(real_path) orelse ".";
+
+    var filename_base = target_dir;
+    if (target_dir.len == 0 or std.mem.eql(u8, target_dir, ".")) {
+        filename_base = "archive";
+        target_dir = ".";
+    }
+
+    var child = try std.process.spawn(io, .{ .argv = &.{ "tar", "-czhf", "-", "-C", parent_dir, target_dir }, .stdout = .pipe, .stderr = .ignore });
+    defer _ = child.wait(io) catch {};
+
+    const filename = try std.fmt.allocPrint(allocator, "{s}.tar.gz", .{filename_base});
+    defer allocator.free(filename);
+
+    try writer.print("HTTP/1.1 200 OK\r\n", .{});
+    try writer.print("Content-Type: application/gzip\r\n", .{});
+    try writer.print("Content-Disposition: attachment; filename=\"{s}\"\r\n", .{filename});
+    try writer.print("Transfer-Encoding: chunked\r\n", .{});
+
+    if (req.head.keep_alive) {
+        try writer.print("Connection: keep-alive\r\n\r\n", .{});
+    } else {
+        try writer.print("Connection: close\r\n\r\n", .{});
+    }
+
+    var stdout_buf: [4096]u8 = undefined;
+    var stdout = child.stdout.?.reader(io, &stdout_buf);
+
+    while (true) {
+        var buf: [8192]u8 = undefined;
+
+        const bytes_read = stdout.interface.readSliceShort(&buf) catch break;
+        if (bytes_read == 0) break;
+
+        writer.print("{x}\r\n", .{bytes_read}) catch break;
+        writer.writeAll(buf[0..bytes_read]) catch break;
+        writer.print("\r\n", .{}) catch break;
+    }
+
+    writer.print("0\r\n\r\n", .{}) catch {};
+
+    if (@hasDecl(@TypeOf(writer.*), "flush")) {
+        writer.flush() catch {};
+    }
 }
 
 fn serve_file(io: std.Io, req: *Server.Request, writer: *std.Io.Writer, path: []const u8, size: u64) !void {

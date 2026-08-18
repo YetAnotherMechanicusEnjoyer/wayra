@@ -8,9 +8,10 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
 
     var iter = dir.iterate();
     while (try iter.next(io)) |entry| {
-        const is_dir = entry.kind == .directory or entry.kind == .sym_link;
-        const icon = icons.get_icon(entry.name, is_dir);
-        //const ext_label = if (is_dir) "" else get_extension_label(entry.name);
+        const path = try std.fs.path.join(allocator, &.{ dir_path, entry.name });
+        defer allocator.free(path);
+        const is_dir_bool = is_dir(io, path, entry);
+        const icon = icons.get_icon(entry.name, is_dir_bool);
 
         const file_path = std.fs.path.join(allocator, &.{ dir_path, entry.name }) catch continue;
         const stat = std.Io.Dir.cwd().statFile(io, file_path, .{}) catch continue;
@@ -21,16 +22,22 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
         const bytes_size = try std.fmt.bufPrint(&buffer, "{d:.2}", .{bytes.size});
         const size = std.mem.trimEnd(u8, std.mem.trimEnd(u8, bytes_size, "0"), ".");
 
-        if (is_dir) {
+        if (is_dir_bool) {
+            const download = try std.fmt.allocPrint(allocator, "{s}?download", .{entry.name});
+            defer allocator.free(download);
+
             const item = try std.fmt.allocPrint(allocator,
                 \\<li>
                 \\  <a href="{s}/" class="item-link" data-type="dir">
                 \\    <div class="icon-wrapper">{s}</div>
                 \\    <span class="name">{s}/</span>
                 \\  </a>
+                \\  <a href="{s}" download="{s}" class="dl-btn" title="Download">
+                \\    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                \\  </a>
                 \\</li>
                 \\
-            , .{ entry.name, icon, entry.name });
+            , .{ entry.name, icon, entry.name, download, download });
             defer allocator.free(item);
             try list.appendSlice(allocator, item);
         } else {
@@ -53,10 +60,22 @@ pub fn render_items(io: std.Io, allocator: std.mem.Allocator, dir_path: []const 
     }
 }
 
-fn get_extension_label(filename: []const u8) []const u8 {
-    const ext = std.fs.path.extension(filename);
-    if (ext.len > 1) return ext[1..];
-    return "FILE";
+fn is_dir(io: std.Io, path: []const u8, e: std.Io.Dir.Entry) bool {
+    if (e.kind == .directory) return true;
+    if (e.kind == .sym_link) {
+        var resolved_buf: [std.fs.max_path_bytes]u8 = undefined;
+        if (std.Io.Dir.cwd().realPathFile(io, path, &resolved_buf)) |resolved_len| {
+            const resolved_path = resolved_buf[0..resolved_len];
+            if (std.Io.Dir.cwd().statFile(io, resolved_path, .{})) |resolved_stat| {
+                return resolved_stat.kind == .directory;
+            } else |_| {
+                return false;
+            }
+        } else |_| {
+            return false;
+        }
+    }
+    return false;
 }
 
 fn get_unit(size: u64) struct { size: f64, unit: []const u8 } {

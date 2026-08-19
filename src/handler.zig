@@ -43,8 +43,8 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
         return;
     }
 
-    const force_listing = std.mem.indexOf(u8, target, "?list") != null;
-    const force_download = std.mem.indexOf(u8, target, "?download") != null;
+    const render = std.mem.indexOf(u8, target, "?render") != null;
+    const download = std.mem.indexOf(u8, target, "?download") != null;
     const curl_client = utils.is_curl(req);
 
     var clean_path = target;
@@ -74,10 +74,10 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
             try serve_tree_listing(io, allocator, req, real_path);
             return;
         }
-        if (force_listing) {
+        if (!render) {
             log_request(io, addr, req, .ok, null);
             try serve_dir_listing(io, allocator, req, real_path, target);
-        } else if (force_download) {
+        } else if (download) {
             log_request(io, addr, req, .ok, null);
             try serve_dir_download(io, allocator, req, writer, real_path);
             return;

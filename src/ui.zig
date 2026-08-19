@@ -38,7 +38,7 @@ pub fn render_dir(io: std.Io, allocator: std.mem.Allocator, dir_path: []const u8
         \\    </header>
         \\        <div class="header-actions">
         \\          <button id="toggle-list-btn" class="btn">
-        \\            Listing Mode
+        \\            Auto-Render index.html
         \\          </button>
         \\        </div>
         \\    <div class="search-box">
@@ -78,6 +78,7 @@ pub fn render_dir(io: std.Io, allocator: std.mem.Allocator, dir_path: []const u8
         \\            <div class="modal-actions">
         \\                <button id="copy-btn" class="btn" style="display:none;">Copy</button>
         \\                <a id="dl-modal-btn" href="#" download class="btn">Download</a>
+        \\                <button id="toggle-render-btn" class="btn" style="display:none;">Render</button>
         \\                <button id="close-modal" class="btn">&times;</button>
         \\            </div>
         \\        </div>

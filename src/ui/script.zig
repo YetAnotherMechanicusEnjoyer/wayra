@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub fn render_script(allocator: std.mem.Allocator, list: *std.ArrayListUnmanaged(u8)) !void {
     try list.appendSlice(allocator,
+        \\<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         \\<script>
         \\    document.addEventListener('DOMContentLoaded', () => {
         \\
@@ -12,6 +13,7 @@ pub fn render_script(allocator: std.mem.Allocator, list: *std.ArrayListUnmanaged
     try list.appendSlice(allocator, get_search_filter());
     try list.appendSlice(allocator, get_modal_event());
     try list.appendSlice(allocator, get_toggle_list_btn());
+    try list.appendSlice(allocator, get_toggle_render_preview_btn());
     try list.appendSlice(allocator, get_file_preview());
 
     try list.appendSlice(allocator,
@@ -31,9 +33,87 @@ fn get_dom_variables() []const u8 {
     \\        const dlModalBtn = document.getElementById('dl-modal-btn');
     \\        const searchInput = document.getElementById('search-input');
     \\        const itemCount = document.getElementById('item-count');
-    \\        const toggleBtn = document.getElementById('toggle-list-btn');
+    \\        const toggleRenderBtn = document.getElementById('toggle-render-btn');
     \\
     \\        let rawTextContent = "";
+    \\        let currentExt = "";
+    \\        let isRendered = false;
+    \\
+    \\        function renderRawCode() {
+    \\            const lines = rawTextContent.split('\n');
+    \\            const formatted = lines.map((line, idx) => {
+    \\                const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    \\                return `<div class="code-line"><span class="line-num">${idx + 1}</span><span class="line-content">${escaped || ' '}</span></div>`;
+    \\            }).join('');
+    \\            body.innerHTML = `<pre class="code-container"><code>${formatted}</code></pre>`;
+    \\        }
+    \\
+    \\        function updatePreviewView() {
+    \\            if (isRendered) {
+    \\                toggleRenderBtn.style.background = 'var(--accent, #7600FF)';
+    \\                toggleRenderBtn.style.color = 'var(--text, #000000)';
+    \\                copyBtn.style.display = 'none';
+    \\
+    \\                body.innerHTML = '';
+    \\                const iframe = document.createElement('iframe');
+    \\
+    \\                if (currentExt === '.md') {
+    \\                    iframe.style.cssText = 'width: 100%; height: 100%; border: none; background: #0d1117; border-radius: 4px;';
+    \\
+    \\                    const mdHtml = typeof marked !== 'undefined' ? marked.parse(rawTextContent) : 'Error: marked.js is missing';
+    \\
+    \\                    iframe.srcdoc = `
+    \\                        <!DOCTYPE html>
+    \\                        <html lang="en">
+    \\                        <head>
+    \\                            <meta charset="UTF-8">
+    \\                            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown-dark.min.css">
+    \\                            <style>
+    \\                                :root {
+    \\                                    --color-canvas-default: #0B101E;
+    \\                                    --color-canvas-subtle: #151C2D;
+    \\                                    --color-border-default: #1E293B;
+    \\                                    --color-border-muted: #1E293B;
+    \\                                    --color-fg-default: #E2E8F0;
+    \\                                    --color-fg-muted: #94A3B8;
+    \\                                    --color-accent-fg: #00E5FF;
+    \\                                    --color-accent-emphasis: #00E5FF;
+    \\                                }
+    \\
+    \\                                body {
+    \\                                    margin: 0;
+    \\                                    padding: 24px;
+    \\                                    background-color: var(--color-canvas-default) !important;
+    \\                                }
+    \\                                html, body { height: 100%; overflow-y: auto; }
+    \\
+    \\                                ::-webkit-scrollbar { width: 8px; }
+    \\                                ::-webkit-scrollbar-track { background: var(--color-canvas-default); }
+    \\                                ::-webkit-scrollbar-thumb { background: #2A364F; border-radius: 4px; }
+    \\                                ::-webkit-scrollbar-thumb:hover { background: var(--color-accent-fg); }
+    \\
+    \\                                .markdown-body a { color: var(--color-accent-fg) !important; text-decoration: none; }
+    \\                                .markdown-body a:hover { text-decoration: underline; }
+    \\                            </style>
+    \\                        </head>
+    \\                        <body class="markdown-body">
+    \\                            ${mdHtml}
+    \\                        </body>
+    \\                        </html>
+    \\                    `;
+    \\                    body.appendChild(iframe);
+    \\                } else if (currentExt === '.html') {
+    \\                    iframe.style.cssText = 'width: 100%; height: 100%; border: none; background: white; border-radius: 4px;';
+    \\                    iframe.srcdoc = rawTextContent;
+    \\                    body.appendChild(iframe);
+    \\                }
+    \\            } else {
+    \\                toggleRenderBtn.style.background = '';
+    \\                toggleRenderBtn.style.color = '';
+    \\                copyBtn.style.display = 'flex';
+    \\                renderRawCode();
+    \\            }
+    \\        }
     \\
     ;
 }
@@ -102,22 +182,36 @@ fn get_modal_event() []const u8 {
 
 fn get_toggle_list_btn() []const u8 {
     return
+    \\        const toggleBtn = document.getElementById('toggle-list-btn');
+    \\
     \\        if (toggleBtn) {
     \\            toggleBtn.onclick = () => {
     \\                const url = new URL(window.location.href);
     \\                const params = url.searchParams;
-    \\                if (params.has('list')) {
-    \\                    params.delete('list');
+    \\                if (params.has('render')) {
+    \\                    params.delete('render');
     \\                } else {
-    \\                    params.set('list', '1');
+    \\                    params.set('render', '1');
     \\                }
     \\                window.location.href = url.toString();
     \\            };
     \\
-    \\            if (new URLSearchParams(window.location.search).has('list')) {
+    \\            if (new URLSearchParams(window.location.search).has('render')) {
     \\                toggleBtn.style.background = 'var(--accent, #7600FF)';
     \\                toggleBtn.style.color = 'var(--text, #000000)';
     \\            }
+    \\        }
+    \\
+    ;
+}
+
+fn get_toggle_render_preview_btn() []const u8 {
+    return
+    \\        if (toggleRenderBtn) {
+    \\            toggleRenderBtn.onclick = () => {
+    \\                isRendered = !isRendered;
+    \\                updatePreviewView();
+    \\            };
     \\        }
     \\
     ;
@@ -129,6 +223,7 @@ fn get_file_preview() []const u8 {
     \\        const imgExts = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.bmp'];
     \\        const audioExts = ['.mp3', '.wav', '.ogg', '.flac', '.m4a'];
     \\        const videoExts = ['.mp4', '.webm', '.mkv', '.mov'];
+    \\        const renderExts = ['.md', '.html'];
     \\
     \\        document.querySelectorAll('.item-link[data-type="file"]').forEach(link => {
     \\            link.onclick = async (e) => {
@@ -140,10 +235,13 @@ fn get_file_preview() []const u8 {
     \\                const lastDot = name.lastIndexOf('.');
     \\                if (lastDot > 0) ext = name.substring(lastDot).toLowerCase();
     \\
+    \\                currentExt = ext;
+    \\
     \\                title.innerText = name;
     \\                dlModalBtn.href = href;
     \\                dlModalBtn.download = name;
     \\                copyBtn.style.display = 'none';
+    \\                toggleRenderBtn.style.display = renderExts.includes(ext) ? 'flex' : 'none';
     \\                body.innerHTML = '<div class="no-preview">Loading...</div>';
     \\                modal.classList.add('active');
     \\
@@ -163,15 +261,15 @@ fn get_file_preview() []const u8 {
     \\                        if (text.indexOf('\0') !== -1) throw new Error('binary');
     \\
     \\                        rawTextContent = text;
-    \\                        copyBtn.style.display = 'flex';
     \\
-    \\                        const lines = text.split('\n');
-    \\                        const formatted = lines.map((line, idx) => {
-    \\                            const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    \\                            return `<div class="code-line"><span class="line-num">${idx + 1}</span><span class="line-content">${escaped || ' '}</span></div>`;
-    \\                        }).join('');
-    \\
-    \\                        body.innerHTML = `<pre class="code-container"><code>${formatted}</code></pre>`;
+    \\                        if (renderExts.includes(ext)) {
+    \\                            isRendered = true;
+    \\                            updatePreviewView();
+    \\                        } else {
+    \\                            isRendered = false;
+    \\                            copyBtn.style.display = 'flex';
+    \\                            renderRawCode();
+    \\                        }
     \\                    } catch (err) {
     \\                        if (err.message === 'binary') {
     \\                            body.innerHTML = `<div class="no-preview">Binary executable file.<br><br><a href="${href}" download style="color: var(--accent);">Download File</a></div>`;

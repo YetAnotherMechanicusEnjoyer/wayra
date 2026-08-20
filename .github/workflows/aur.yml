@@ -60,7 +60,13 @@ jobs:
           if [[ "${{ matrix.pkgname }}" == "wayra" ]]; then
             VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
           else
-            VERSION=$(git describe --long --tags --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
+            if git describe --tags &> /dev/null; then
+              VERSION=$(git describe --long --tags --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
+            else
+              COUNT=$(git rev-list --count HEAD)
+              HASH=$(git rev-parse --short=7 HEAD)
+              VERSION="0.0.0r${COUNT}.g${HASH}"
+            fi
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         shell: bash

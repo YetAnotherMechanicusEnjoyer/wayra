@@ -30,19 +30,36 @@ wayra serves local directories over HTTP and provides a modern, responsive singl
 - **Real-time Filtering:** Client-side search to quickly filter files within the current directory.
 - **Zero Frontend Build Step:** The frontend relies strictly on standard web technologies (HTML/CSS/JS). External libraries (like `marked.js`) are fetched dynamically at runtime only when needed.
 
-## Prerequisites
+## Installation
+
+### Arch Linux ([AUR](https://aur.archlinux.org/packages/wayra))
+
+Requires any AUR Helper like [YaY](https://github.com/Jguer/yay)
+
+e.g.:
+```bash
+yay -S wayra        # Stable version
+                    # or
+yay -S wayra-git    # Latest version
+```
+
+### Binaries
+
+Download prebuilt binaries from [releases](https://github.com/YetAnotherMechanicusEnjoyer/wayra/releases/)
+
+### From Source
+
+**0. Prerequesites**
 
 To build and run this project from source, you will need [Zig 0.16.0](https://ziglang.org/download/).
 
-## Installation
-
-### 1. Clone the repository
+**1. Clone the repository**
 ```bash
 git clone https://github.com/YetAnotherMechanicusEnjoyer/wayra.git
 cd wayra
 ```
 
-### 2. Build the executable using the Zig build system
+**2. Build the executable using the Zig build system**
 ```bash
 zig build -Doptimize=ReleaseFast
 ```
@@ -62,10 +79,10 @@ $ wayra -h
 
 To start the server, run the built executable and specify the root directory you want to serve.
 ```bash
-./zig-out/bin/wayra --dir /path/to/your/folder
+wayra --dir /path/to/your/folder
 ```
 
-*(Note: Adjust the command line arguments based on your specific implementation. If the server serves the current working directory by default, simply running `./zig-out/bin/wayra` is sufficient.)*
+*(Note: Adjust the command line arguments based on your specific implementation. If the server serves the current working directory by default, simply running `wayra` is sufficient.)*
 
 Once the server is running, open your web browser and navigate to one of the following:
 ```bash

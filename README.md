@@ -43,9 +43,31 @@ yay -S wayra        # Stable version
 yay -S wayra-git    # Latest version
 ```
 
+---
+
+### Nix / NixOS
+
+If you use Nix with flakes enabled, you can run or install wayra instantly in a reproducible way:
+
+**Run directly without installation:**
+```bash
+nix run github:YetAnotherMechanicusEnjoyer/wayra
+```
+
+**Install via a Flake:**
+```nix
+environment.systemPackages = [
+  inputs.wayra.packages.${pkgs.system}.default
+];
+```
+
+---
+
 ### Binaries
 
 Download prebuilt binaries from [releases](https://github.com/YetAnotherMechanicusEnjoyer/wayra/releases/)
+
+---
 
 ### From Source
 

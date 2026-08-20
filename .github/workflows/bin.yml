@@ -1,0 +1,41 @@
+name: Binaries Publisher
+
+run-name: Binaries Publisher | ${{ github.event_name }} by ${{ github.actor }} on '${{ github.ref_name }}'
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publishing for ${{ matrix.target }}
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: .
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-linux
+          - aarch64-linux
+          - x86_64-macos
+          - aarch64-macos
+          - x86_64-windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: YetAnotherMechanicusEnjoyer/zig-actions/release@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          zig-version: "0.16.0"
+          binary-name: "wayra"
+          target: ${{ matrix.target }}
+          extra-files: "README.md, LICENSE"

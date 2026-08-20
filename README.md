@@ -84,6 +84,3 @@ http://<address>:<port>
 
 ## Contributing
 Contributions are welcome. Please ensure that your code adheres to the existing style and that you test your changes locally before submitting a pull request.
-
-## License
-[![GPL-3.0](https://img.shields.io/github/license/YetAnotherMechanicusEnjoyer/wayra?style=for-the-badge&logo=github&color=2EA44F)](https://github.com/YetAnotherMechanicusEnjoyer/wayra/blob/738bbebb25ac510da9e3f1d3b36c2fc59f36b2e1/LICENSE)

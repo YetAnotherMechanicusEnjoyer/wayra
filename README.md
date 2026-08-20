@@ -1,5 +1,18 @@
 # wayra
 
+<p align="center"> 
+  <img alt="AUR Stable Version" src="https://img.shields.io/aur/version/wayra?style=for-the-badge&logo=archlinux&logoColor=white&label=wayra&labelColor=1793D1&link=https%3A%2F%2Faur.archlinux.org%2Fpackages%2Fwayra">
+  <img alt="AUR Latest Version" src="https://img.shields.io/aur/version/wayra-git?style=for-the-badge&logo=archlinux&logoColor=white&label=wayra-git&labelColor=1793D1&link=https%3A%2F%2Faur.archlinux.org%2Fpackages%2Fwayra-git">
+   <img alt="GitHub License" src="https://img.shields.io/github/license/YetAnotherMechanicusEnjoyer/wayra?style=for-the-badge&logo=gplv3&logoColor=white&labelColor=010409&color=BD0000&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Fblob%2F97f424c116b690a2703a5e83d5a9bddcaeec8545%2FLICENSE">
+
+  <br>
+
+  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/YetAnotherMechanicusEnjoyer/wayra?display_timestamp=committer&style=for-the-badge&logo=github&labelColor=010409">
+  <img alt="AUR Publisher" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/aur.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=AUR%20Publisher&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Faur.yml">
+  <img alt="Binaries Publisher" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/bin.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=Binaries%20Publisher&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Fbin.yml">
+  <img alt="Zig CI" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/zig.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=Zig%20CI&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Fzig.yml">
+</p>
+
 A lightweight, high-performance standalone web server and directory explorer written in Zig. 
 
 wayra serves local directories over HTTP and provides a modern, responsive single-page web interface to browse, preview, and interact with files directly from the browser (inspired by Python's builtin HTTP server).

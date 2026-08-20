@@ -63,6 +63,8 @@ environment.systemPackages = [
 ];
 ```
 
+*(Note: I am purely speculating, I still need confirmation from a Nix user.)*
+
 ---
 
 ### Binaries

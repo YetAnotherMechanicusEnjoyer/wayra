@@ -20,7 +20,7 @@ pub fn main(init: std.process.Init) !u8 {
     const io = init.io;
     const allocator = init.arena.allocator();
 
-    var args = init.minimal.args.iterate();
+    var args = try init.minimal.args.iterateAllocator(allocator);
     _ = args.skip();
 
     var err_ctx = String.init(allocator);

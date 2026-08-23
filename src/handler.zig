@@ -74,7 +74,7 @@ fn handle_request(io: std.Io, allocator: std.mem.Allocator, addr: std.Io.net.IpA
             try serve_tree_listing(io, allocator, req, real_path);
             return;
         }
-        if (!render) {
+        if (!render and !download) {
             log_request(io, addr, req, .ok, null);
             try serve_dir_listing(io, allocator, req, real_path, target);
         } else if (download) {

@@ -171,24 +171,83 @@ fn serve_file(io: std.Io, req: *Server.Request, writer: *std.Io.Writer, path: []
 
     const mime_type = mime.get_mime(path);
 
-    try writer.print("HTTP/1.1 200 OK\r\n", .{});
+    var range_header: ?[]const u8 = null;
+    var headers_it = req.iterateHeaders();
+    while (headers_it.next()) |header| {
+        if (std.ascii.eqlIgnoreCase(header.name, "range")) {
+            range_header = header.value;
+            break;
+        }
+    }
+
+    var start: u64 = 0;
+    var end: u64 = size - 1;
+    var is_range = false;
+
+    if (range_header) |hdr| {
+        if (std.mem.startsWith(u8, hdr, "bytes=")) {
+            const range_val = hdr[6..];
+            var iter = std.mem.splitScalar(u8, range_val, '-');
+            if (iter.next()) |start_str| {
+                if (start_str.len > 0) {
+                    start = std.fmt.parseInt(u64, start_str, 10) catch 0;
+                    is_range = true;
+                }
+            }
+            if (iter.next()) |end_str| {
+                if (end_str.len > 0) {
+                    end = std.fmt.parseInt(u64, end_str, 10) catch (size - 1);
+                }
+            }
+        }
+    }
+
+    if (start >= size) {
+        try writer.print("HTTP/1.1 416 Range Not Satisfiable\r\nContent-Range: bytes */{d}\r\n\r\n", .{size});
+        try writer.flush();
+        return;
+    }
+
+    if (end >= size) end = size - 1;
+    const content_length = (end - start) + 1;
+
+    if (is_range) {
+        try writer.print("HTTP/1.1 206 Partial Content\r\n", .{});
+        try writer.print("Content-Range: bytes {d}-{d}/{d}\r\n", .{ start, end, size });
+    } else {
+        try writer.print("HTTP/1.1 200 OK\r\n", .{});
+    }
+
     try writer.print("Content-Type: {s}\r\n", .{mime_type});
-    try writer.print("Content-Length: {d}\r\n", .{size});
+    try writer.print("Content-Length: {d}\r\n", .{content_length});
+    try writer.print("Accept-Ranges: bytes\r\n", .{});
+
     if (req.head.keep_alive) {
-        try writer.print("Connection: keep_alive\r\n\r\n", .{});
+        try writer.print("Connection: keep-alive\r\n\r\n", .{});
     } else {
         try writer.print("Connection: close\r\n\r\n", .{});
     }
 
-    var file_buf: [4096]u8 = undefined;
-    var reader = file.reader(io, &file_buf);
+    var remaining = content_length;
+    var current_offset = start;
 
-    while (true) {
+    var file_buf: [4096]u8 = undefined;
+    var file_reader = file.reader(io, &file_buf);
+    try file_reader.seekTo(current_offset);
+    const reader = &file_reader.interface;
+
+    while (remaining > 0) {
         var buffer: [8192]u8 = undefined;
-        const bytes_read = try reader.interface.readSliceShort(&buffer);
+
+        const bytes_read = try reader.readSliceShort(&buffer);
         if (bytes_read == 0) break;
-        try writer.writeAll(&buffer);
+
+        try writer.writeAll(buffer[0..bytes_read]);
+
+        remaining -= bytes_read;
+        current_offset += bytes_read;
     }
+
     try writer.flush();
 }
 

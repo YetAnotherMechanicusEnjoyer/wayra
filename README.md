@@ -10,6 +10,7 @@
 
   <img alt="AUR Publisher" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/aur.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=AUR%20Publisher&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Faur.yml">
   <img alt="Binaries Publisher" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/bin.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=Binaries%20Publisher&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Fbin.yml">
+  <img alt="Nix Publisher" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/nix.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=Nix%20Publisher&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Fnix.yml">
   <img alt="Zig CI" src="https://img.shields.io/github/actions/workflow/status/YetAnotherMechanicusEnjoyer/wayra/zig.yml?style=for-the-badge&logo=github-actions&logoColor=white&label=Zig%20CI&labelColor=010409&link=https%3A%2F%2Fgithub.com%2FYetAnotherMechanicusEnjoyer%2Fwayra%2Factions%2Fworkflows%2Fzig.yml">
   
   <br>

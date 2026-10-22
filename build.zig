@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    if (optimize != .Debug) {
+    if (optimize != .debug) {
         module.strip = true;
         module.error_tracing = false;
         module.omit_frame_pointer = true;
